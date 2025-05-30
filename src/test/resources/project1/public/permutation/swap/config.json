@@ -1,0 +1,14 @@
+{
+    "executed_instructions": "0",
+    "initial_reg": {
+        "1": "1"
+    },
+    "initial_mem": {
+    },
+    "final_reg" : {
+        "1": "4"
+    },
+    "final_mem": {
+    },
+    "modules": ["RV32B"]
+}
