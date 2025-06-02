@@ -20,7 +20,7 @@ object PermBuilder {
     *   positions to source bit positions.
     * @return
     *   A list of strings representing the instructions to implement the
-    *   permutation e.g. List("grev x1, x2, 0x01", "grev x1, x2, 0x02", ...)
+    *   permutation e.g. List("grevi x1, x2, 0x01", "grevi x1, x2, 0x02", ...)
     */
   def buildPermutation(rd: Int, rs1: Int, perm: Map[Int, Int]): List[String] = {
 

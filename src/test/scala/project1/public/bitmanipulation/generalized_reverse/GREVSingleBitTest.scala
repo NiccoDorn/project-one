@@ -21,7 +21,6 @@ class GREVSingleBitTest
 
         c.io.input.poke(input)
         c.io.pattern.poke(pattern)
-        c.clock.step()
         c.io.result.expect(expected)
     }
   }

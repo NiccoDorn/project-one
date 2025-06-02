@@ -17,13 +17,10 @@ import RISCV.model._
  *   <li>[[interfaces.core_interface.DataInterface]]: Interface providing signals related to data access.</li>
  *   <li>[[interfaces.core_interface.RVFIInterface]]: Interface providing signals for the RISC-V formal interface (RVFI).</li>
  * </ul>
- * 
- * @param genPC A function that generates an instance of the ProgramCounter module.
- * @param genRF A function that generates an instance of the RegisterFile module.
- * @param genCU A function that generates an instance of the ControlUnit module.
- * @param genDecoder A function that generates an instance of the Decoder module.
- * @param genBU A function that generates an instance of the BranchUnit module.
- * @param genALU A function that generates an instance of the ALU module.
+ *
+ * @param genExecutionUnits A sequence of generators for execution units.
+ * @param genProgramCounter A function that generates an instance of the ProgramCounter module.
+ * @param genRegisterFile A function that generates an instance of the RegisterFile module.
  */
 abstract class GenericCore (genExecutionUnits : Seq[() => AbstractExecutionUnit], genProgramCounter : => AbstractProgramCounter, genRegisterFile : => AbstractRegisterFile) extends Module {
 
