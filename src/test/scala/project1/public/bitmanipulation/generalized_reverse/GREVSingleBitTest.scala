@@ -25,4 +25,29 @@ class GREVSingleBitTest
     }
   }
 
+  "GeneralizedReverse" should "reverse at level of hex characters" in {
+    test(new GeneralizedReverser(32)).withAnnotations(Seq(WriteVcdAnnotation)) {
+      c =>
+        val input = BigInt("ABCD1234", 16).U(32.W)
+        val pattern = 0b11100.U(5.W)
+        val expected = BigInt("4321DCBA", 16).U(32.W)
+
+        c.io.input.poke(input)
+        c.io.pattern.poke(pattern)
+        c.io.result.expect(expected)
+    }
+  }
+
+  "GeneralizedReverse" should "reverse within hex characters" in {
+    test(new GeneralizedReverser(32)).withAnnotations(Seq(WriteVcdAnnotation)) {
+      c =>
+        val input = BigInt("94211249", 16).U(32.W)
+        val pattern = 0b00011.U(5.W)
+        val expected = BigInt("92488429", 16).U(32.W)
+
+        c.io.input.poke(input)
+        c.io.pattern.poke(pattern)
+        c.io.result.expect(expected)
+    }
+  }
 }
