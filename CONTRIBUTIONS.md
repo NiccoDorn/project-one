@@ -1,6 +1,6 @@
 # Contributions
 
-Briefly describe how each team member has contributed to the project. It goes without saying that every team members should have a good grasp of all parts of the submission.
+Nico: Providing Github Repo to work on things + setup.
 
 # Use of AI tools
 
