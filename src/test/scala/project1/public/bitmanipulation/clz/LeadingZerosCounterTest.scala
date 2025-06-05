@@ -33,6 +33,19 @@ class LeadingZerosCounterTest
         // 00000000 00000000 00000000 00000001
         c.io.input.poke("h00000001".U)
         c.io.result.expect(31.U)
+
+        // Test negative input
+        c.io.input.poke((-1).S(32.W).asUInt)
+        c.io.result.expect(0.U)
+
+    }
+  }
+
+  
+  // Test assertion
+  "LeadingZerosCounter(7)" should "throw an assertion" in {
+    assertThrows[IllegalArgumentException] {
+      new LeadingZerosCounter(7)
     }
   }
 
