@@ -50,8 +50,5 @@ class LeadingZerosCounter(bitWidth: Int)
         otherwise we return the result we counted so far. */
         val isTotalZero = (io.input === 0.U)
         io.result := Mux(isTotalZero, bitWidth.U, countTotal)
-
       }
-
-
 }
