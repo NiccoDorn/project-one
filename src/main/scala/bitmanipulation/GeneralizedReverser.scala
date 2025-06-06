@@ -25,6 +25,8 @@ class GeneralizedReverser(bitWidth: Int)
         val mid = bitWidth / 2
         val lower = io.input(mid - 1, 0)
         val upper = io.input(bitWidth - 1, mid)
+
+        // Represents current depth + 1 
         val currentPhase = log2Ceil(bitWidth)
 
         // Lower submodule
@@ -37,11 +39,14 @@ class GeneralizedReverser(bitWidth: Int)
         upperReversed.io.input := upper
         upperReversed.io.pattern := io.pattern
 
+        // Swap is set if the pattern bit is 1
         val swap = io.pattern(currentPhase - 1)
 
+        // Create upper and lower part based on swap
         val outLower = Mux(swap, upperReversed.io.result, lowerReversed.io.result)
         val outUpper = Mux(swap, lowerReversed.io.result, upperReversed.io.result)
 
+        // Concatenate the results
         io.result := Cat(outUpper, outLower)
 
   }

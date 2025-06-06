@@ -12,8 +12,17 @@ abstract class AbstractFixedRotater(bitWidth: Int) extends Module {
 
 class FixedRotater(bitWidth: Int, shamt: Int)
     extends AbstractFixedRotater(bitWidth) {
+      
+      // Simple assertion
+      assert(isPow2(bitWidth), s"Bit width must be power of two")
+      assert(shamt >= 0 && shamt < bitWidth)
 
-  ??? // TODO: implement Task 1.4 here
+      // Simple bit-manipulation with right and left shift and then OR two results
+      val rightShift = io.input >> shamt
+      val leftShift  = io.input << (bitWidth - shamt)
+      io.result := (rightShift | leftShift)
+
+      
 
 }
 
