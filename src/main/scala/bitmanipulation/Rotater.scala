@@ -15,7 +15,7 @@ class FixedRotater(bitWidth: Int, shamt: Int)
       
       // Simple assertion
       assert(isPow2(bitWidth), s"Bit width must be power of two")
-      assert(shamt >= 0 && shamt < bitWidth)
+      assert(shamt >= 0)
 
       // Simple bit-manipulation with right and left shift and then OR two results
       val rightShift = io.input >> shamt

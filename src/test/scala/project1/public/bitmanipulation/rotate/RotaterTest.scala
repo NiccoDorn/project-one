@@ -46,4 +46,34 @@ class RotateBitTest
       }
   }
 
+  "FixedRotater" should "rotate right by bitwidth" in {
+    test(new FixedRotater(8, 8))
+      .withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+        c.io.input.poke(8.U(8.W))
+        c.io.result.expect(8.U(8.W))
+      }
+  }
+  
+  "FixedRotater" should "rotate right by 0" in {
+    test(new FixedRotater(32, 0))
+      .withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+        c.io.input.poke(8.U(32.W))
+        c.io.result.expect(8.U(32.W))
+      }
+  }
+  
+  
+  "FixedRotater" should "rotate right by 1" in {
+    test(new FixedRotater(16, 1))
+      .withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+        c.io.input.poke(153.U(16.W))
+        c.io.result.expect(32844.U(16.W))
+      }
+  }
+  
+  
+  
+
+
+
 }
