@@ -59,6 +59,7 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   io.result := Mux(!rotate && io.start && io.shamt === 0.U, io.input,
                   Mux(rotate && cnt + 1.U === shamtT, Rotater.io.result, 
                     Mux(!rotate && !io.start, resultReg, currVal)))
+  // now the timing to present the values should be right.
   
   Rotater.io.input := currVal
   
