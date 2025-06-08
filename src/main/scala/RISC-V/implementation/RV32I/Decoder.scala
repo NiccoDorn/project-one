@@ -59,6 +59,9 @@ class Decoder extends AbstractDecoder {
       io_decoder.rd := 0.U
       io_decoder.imm := Fill(20, io_decoder.instr(31)) ## io_decoder.instr(31, 25) ## io_decoder.instr(11, 7)
     }
+
+    /* Task 2.2
+      Note: JAL is J-Type and JALR is I-Type */ 
     is(RISCV_OP.JAL) {
       io_decoder.rs1 := 0.U
       io_decoder.rs2 := 0.U
@@ -66,6 +69,16 @@ class Decoder extends AbstractDecoder {
       io_decoder.imm := Fill(11, io_decoder.instr(31)) ## io_decoder.instr(31) ## io_decoder.instr(19, 12) ## io_decoder.instr(11) ## io_decoder.instr(20) ## io_decoder.instr(30, 21) ## Fill(1, 0.U)
     }
     is(RISCV_OP.JALR) {
+      io_decoder.rs1 := RS1
+      io_decoder.rs2 := 0.U
+      io_decoder.rd := RD
+      io_decoder.imm := Fill(21, io_decoder.instr(31)) ## io_decoder.instr(31, 20)
+    }
+
+    /* Task 2.3 
+      Note: we don't need separate decoder for every load option.
+      They only differ in func bits and that will be handled by the Control Unit */ 
+    is(RISCV_OP.LOAD) {
       io_decoder.rs1 := RS1
       io_decoder.rs2 := 0.U
       io_decoder.rd := RD

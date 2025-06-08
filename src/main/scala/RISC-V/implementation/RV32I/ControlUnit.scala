@@ -5,6 +5,7 @@ import chisel3.util._
 
 import RISCV.interfaces.RV32I.AbstractControlUnit
 import RISCV.model._
+import os.truncate
 
 class ControlUnit extends AbstractControlUnit {
   val stalled = WireInit(STALL_REASON.NO_STALL)
@@ -86,6 +87,19 @@ class ControlUnit extends AbstractControlUnit {
         io_ctrl.data_req := true.B
         io_ctrl.data_we := true.B
         io_ctrl.data_be := Fill(2, RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1)) ## RISCV_TYPE.getFunct3(io_ctrl.instr_type).asUInt(1,0).orR ## 1.U(1.W)
+      }
+
+      // Task 2.2
+      is (RISCV_OP.JAL) {
+
+      }
+      is (RISCV_OP.JALR) {
+
+      }
+
+      // Task 2.3
+      is (RISCV_OP.LOAD) {
+
       }
     }
   }
