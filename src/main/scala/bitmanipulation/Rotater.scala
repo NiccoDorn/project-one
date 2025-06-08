@@ -59,6 +59,7 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   val doneTemp = WireDefault(false.B)
   val resultTemp = WireDefault(0.U(bitWidth.W))
   
+  // now
   switch(state) {
     is(sIdle) {
       doneTemp := io.start && io.shamt === 0.U  // immediate
@@ -76,7 +77,7 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   io.done := doneTemp
   io.result := resultTemp
   
-  // actual rotation
+  // next - actual rotation
   Rotater.io.input := currVal
   switch(state) {
     is(sIdle) {
