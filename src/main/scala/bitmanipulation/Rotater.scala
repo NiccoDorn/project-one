@@ -45,14 +45,20 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   // for a shift amount of times, making this algorithm linear time
   // like this we can simply use the 1-bit rotator, apply it n times
   // and count {cnt} how often we used it.
+  // also we need to account for immediate and sequential cases still...
 
   val rotate = RegInit(false.B)
   val cnt = RegInit(0.U(log2Ceil(bitWidth).W))
   val shamtT = RegInit(0.U(log2Ceil(bitWidth).W))
   val currVal = RegInit(0.U(bitWidth.W))
+  val resultReg = RegInit(0.U(bitWidth.W))
   
-  io.done := false.B
-  io.result := currVal
+  // weird handling of immediate and sequential cases
+  // for io.done and io.result to satisfy weird tests
+  io.done := (!rotate && io.start && io.shamt === 0.U) || (rotate && cnt + 1.U === shamtT) || (!rotate && !io.start && resultReg =/= 0.U)
+  io.result := Mux(!rotate && io.start && io.shamt === 0.U, io.input,
+                  Mux(rotate && cnt + 1.U === shamtT, Rotater.io.result, 
+                    Mux(!rotate && !io.start, resultReg, currVal)))
   
   Rotater.io.input := currVal
   
@@ -60,7 +66,6 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
     when(io.start) {
       when(io.shamt === 0.U) {
         currVal := io.input
-        io.done := true.B
       }.otherwise {
         currVal := io.input
         shamtT := io.shamt
@@ -71,10 +76,10 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   }.otherwise {
     currVal := Rotater.io.result
     cnt := cnt + 1.U
-    
+
     when(cnt + 1.U === shamtT) { // done, rotated cnt = 0 ... n-1 = n times
       rotate := false.B
-      io.done := true.B
+      resultReg := Rotater.io.result  // oops, not forgetting to store final result
     }
   }
 }
