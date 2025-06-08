@@ -53,6 +53,7 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   
   io.done := false.B
   io.result := currVal
+  
   Rotater.io.input := currVal
   
   when(!rotate) {
@@ -71,7 +72,7 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
     currVal := Rotater.io.result
     cnt := cnt + 1.U
     
-    when(cnt + 1.U === shamtT) { // rotate n times from cnt = 0 ... n-1
+    when(cnt + 1.U === shamtT) { // done, rotated cnt = 0 ... n-1 = n times
       rotate := false.B
       io.done := true.B
     }
