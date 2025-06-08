@@ -46,14 +46,14 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
   // like this we can simply use the 1-bit rotator, apply it n times
   // and count {cnt} how often we used it.
 
-  val rotate = RegInit(false.B)                   // initially in idle state
-  val cnt = RegInit(0.U(log2Ceil(bitWidth).W))      
+  val rotate = RegInit(false.B)
+  val cnt = RegInit(0.U(log2Ceil(bitWidth).W))
   val shamtT = RegInit(0.U(log2Ceil(bitWidth).W))
   val currVal = RegInit(0.U(bitWidth.W))
+  
   io.done := false.B
   io.result := currVal
-  
-  Rotater.io.input := currVal // bruh, don't forget to give rotator input
+  Rotater.io.input := currVal
   
   when(!rotate) {
     when(io.start) {
@@ -67,12 +67,11 @@ class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
         rotate := true.B
       }
     }
-
   }.otherwise {
     currVal := Rotater.io.result
     cnt := cnt + 1.U
     
-    when(cnt + 1.U === shamtT) { // finished since we rotated for cnt := {0,1,2, ..., n-1} = n times
+    when(cnt + 1.U === shamtT) { // rotate n times from cnt = 0 ... n-1
       rotate := false.B
       io.done := true.B
     }
