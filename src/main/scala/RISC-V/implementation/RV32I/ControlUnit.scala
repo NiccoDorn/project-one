@@ -91,15 +91,27 @@ class ControlUnit extends AbstractControlUnit {
 
       // Task 2.2
       is (RISCV_OP.JAL) {
+        stalled := STALL_REASON.NO_STALL
+        io_ctrl.reg_we := true.B
+        io_ctrl.alu_control := ALU_CONTROL.ADD
 
       }
       is (RISCV_OP.JALR) {
+        stalled := STALL_REASON.NO_STALL
+        io_ctrl.reg_we := true.B
+        io_ctrl.alu_control := ALU_CONTROL.ADD
 
       }
 
-      // Task 2.3
+      // Task 2.3 
+      // Note: PC + 4 is default, thus if the instruction has normal flow dont update
       is (RISCV_OP.LOAD) {
-
+        stalled := STALL_REASON.EXECUTION_UNIT
+        io_ctrl.alu_control := ALU_CONTROL.ADD
+        io_ctrl.alu_op_1_sel := ALU_OP_1_SEL.RS1
+        io_ctrl.alu_op_2_sel := ALU_OP_2_SEL.IMM
+        io_ctrl.reg_we := true.B 
+        
       }
     }
   }
