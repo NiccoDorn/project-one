@@ -41,60 +41,60 @@ class BitPermutationUnit(
   val imm = io.instr(24, 20)
 
   /* get correct instruction from encoded bit sequence */
-  val isGrev = funct3 === "b101".U && funct7 === "b0110100".U && !io.instr(30)
-  val isGrevi = funct3 === "b101".U && funct7 === "b0110100".U && io.instr(30)
+  val grev = funct3 === "b101".U && funct7 === "b0110100".U && !io.instr(30)
+  val grevi = funct3 === "b101".U && funct7 === "b0110100".U && io.instr(30)
 
-  val isShfl = funct3 === "b001".U && funct7 === "b0000100".U && !io.instr(30)
-  val isShfli = funct3 === "b001".U && funct7 === "b0000100".U && io.instr(30)
+  val shfl = funct3 === "b001".U && funct7 === "b0000100".U && !io.instr(30)
+  val shfli = funct3 === "b001".U && funct7 === "b0000100".U && io.instr(30)
 
-  val isUnshfl = funct3 === "b101".U && funct7 === "b0000100".U && !io.instr(30)
-  val isUnshfli = funct3 === "b101".U && funct7 === "b0000100".U && io.instr(30)
+  val unshfl = funct3 === "b101".U && funct7 === "b0000100".U && !io.instr(30)
+  val unshfli = funct3 === "b101".U && funct7 === "b0000100".U && io.instr(30)
 
-  val isRol = funct3 === "b001".U && funct7 === "b0110000".U
-  val isRor = funct3 === "b101".U && funct7 === "b0110000".U && !io.instr(30)
-  val isRori = funct3 === "b101".U && funct7 === "b0110000".U && io.instr(30)
+  val rol = funct3 === "b001".U && funct7 === "b0110000".U
+  val ror = funct3 === "b101".U && funct7 === "b0110000".U && !io.instr(30)
+  val rori = funct3 === "b101".U && funct7 === "b0110000".U && io.instr(30)
 
-  val usesImmediate = isGrevi || isShfli || isUnshfli || isRori
-  val validInstr = io.valid && (isGrev || isGrevi || isShfl || isShfli || isUnshfl || isUnshfli || isRol || isRor || isRori)
+  val usesImm = grevi || shfli || unshfli || rori
+  val validInstr = io.valid && (grev || grevi || shfl || shfli || unshfl || unshfli || rol || ror || rori)
 
   /* Let the speculative execution commence */
   val rs1_data = io_reg.reg_read_data1
   val rs2_data = io_reg.reg_read_data2
   // exec reverser, shuffler and rotator speculatively
   generalizedReverser.io.input := rs1_data
-  generalizedReverser.io.pattern := Mux(isGrevi, imm, rs2_data)
+  generalizedReverser.io.pattern := Mux(grevi, imm, rs2_data)
   
   shuffler.io.input := rs1_data
-  shuffler.io.pattern := Mux(isShfli || isUnshfli, imm, rs2_data)
-  shuffler.io.unshuffle := (isUnshfl || isUnshfli).asUInt
+  shuffler.io.pattern := Mux(shfli || unshfli, imm, rs2_data)
+  shuffler.io.unshuffle := (unshfl || unshfli).asUInt
   
   rotater.io.input := rs1_data
-  rotater.io.shamt := Mux(isRori, imm, rs2_data)
-  rotater.io.start := io.valid && (isRol || isRor || isRori)
+  rotater.io.shamt := Mux(rori, imm, rs2_data)
+  rotater.io.start := io.valid && (rol || ror || rori)
 
-  val grev_result = generalizedReverser.io.result
-  val shfl_result = shuffler.io.result
-  val rot_result = rotater.io.result
+  val grevRes = generalizedReverser.io.result
+  val shflRes = shuffler.io.result
+  val rotRes = rotater.io.result
 
-  /* get true instruction result using MuxCase */
+  /* get true instruction result using MuxCase - *plopp* noice! */
   val result = MuxCase(0.U, Seq(
-    (isGrev || isGrevi) -> grev_result,
-    (isShfl || isShfli || isUnshfl || isUnshfli) -> shfl_result,
-    (isRol || isRor || isRori) -> rot_result
+    (grev || grevi) -> grevRes,
+    (shfl || shfli || unshfl || unshfli) -> shflRes,
+    (rol || ror || rori) -> rotRes
   ))
 
   // stall for sequential rotation operations that are not done
-  val isRotationOp = isRol || isRor || isRori
-  val needsStall = validInstr && isRotationOp && !rotater.io.done
-  io.stall := Mux(needsStall, STALL_REASON.EXECUTION_UNIT, STALL_REASON.NO_STALL)
+  val isRotOp = rol || ror || rori
+  val shouldStall = validInstr && isRotOp && !rotater.io.done
+  io.stall := Mux(shouldStall, STALL_REASON.EXECUTION_UNIT, STALL_REASON.NO_STALL)
   // write back if valid and not stalled
-  io_reg.reg_write_en := validInstr && !needsStall
+  io_reg.reg_write_en := validInstr && !shouldStall
   io_reg.reg_rd := rd
   io_reg.reg_write_data := result
   io_reg.reg_rs1 := rs1
   // if immediate then r2 is 0
-  io_reg.reg_rs2 := Mux(usesImmediate, 0.U, rs2)
+  io_reg.reg_rs2 := Mux(usesImm, 0.U, rs2)
   // increment program counter by + 4
-  io_pc.pc_we := validInstr && !needsStall
+  io_pc.pc_we := validInstr && !shouldStall
   io_pc.pc_wdata := io_pc.pc + 4.U
 }
