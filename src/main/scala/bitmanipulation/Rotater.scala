@@ -39,8 +39,6 @@ abstract class AbstractSequentialRotater(bitWidth: Int) extends Module {
 class SequentialRotater(bitWidth: Int, generator: () => AbstractFixedRotater)
     extends AbstractSequentialRotater(bitWidth) {
   val Rotater = Module(generator())
-  Rotater.io <> DontCare
-  
   // idea: we use the above defined fixed rotator {Rotator} for the sequential rotator
   // for a shift amount of times, making this algorithm linear time
   // like this we can simply use the 1-bit rotator, apply it n times
