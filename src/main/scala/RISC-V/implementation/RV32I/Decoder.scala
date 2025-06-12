@@ -66,13 +66,13 @@ class Decoder extends AbstractDecoder {
       io_decoder.rs1 := 0.U
       io_decoder.rs2 := 0.U
       io_decoder.rd := RD
-      io_decoder.imm := Fill(11, io_decoder.instr(31)) ## io_decoder.instr(31) ## io_decoder.instr(19, 12) ## io_decoder.instr(11) ## io_decoder.instr(20) ## io_decoder.instr(30, 21) ## Fill(1, 0.U)
+      io_decoder.imm := Fill(11, io_decoder.instr(31)) ## io_decoder.instr(31) ## io_decoder.instr(19, 12) ## io_decoder.instr(20) ## io_decoder.instr(30, 21) ## Fill(1, 0.U)
     }
     is(RISCV_OP.JALR) {
       io_decoder.rs1 := RS1
       io_decoder.rs2 := 0.U
       io_decoder.rd := RD
-      io_decoder.imm := Fill(21, io_decoder.instr(31)) ## io_decoder.instr(31, 20)
+      io_decoder.imm := Fill(20, io_decoder.instr(31)) ## io_decoder.instr(31, 20)
     }
 
     /* Task 2.3 
@@ -82,7 +82,7 @@ class Decoder extends AbstractDecoder {
       io_decoder.rs1 := RS1
       io_decoder.rs2 := 0.U
       io_decoder.rd := RD
-      io_decoder.imm := Fill(21, io_decoder.instr(31)) ## io_decoder.instr(31, 20)
+      io_decoder.imm := Fill(20, io_decoder.instr(31)) ## io_decoder.instr(31, 20)
     }
   }
 }

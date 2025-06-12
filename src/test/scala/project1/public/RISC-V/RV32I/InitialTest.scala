@@ -31,6 +31,45 @@ class InitialTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
       dut.io_decoder.imm.expect(0.U)
     }
   }
+  
+  it should "decode a positive JAL immediate" in {
+    test(new Decoder) { dut =>
+      // assemble "jal x5, 16"
+      val hex = RISCVAssembler.fromString("jal x5, 16").split("\n")(0)
+      val instr = BigInt(hex, 16).U
+      dut.io_decoder.instr.poke(instr)
+      dut.clock.step()
+      dut.io_decoder.rs1.expect(0.U)
+      dut.io_decoder.rs2.expect(0.U)
+      dut.io_decoder.rd .expect(5.U)
+      dut.io_decoder.imm.expect(16.U)     // 0x10
+    }
+  }
+  
+  it should "decode a negative JALR immediate" in {
+    test(new Decoder) { dut =>
+      // assemble "jalr x6, x7, -4"
+      val hex = RISCVAssembler.fromString("jalr x6, x7, 0x-4").split("\n")(0)
+      val instr = BigInt(hex, 16).U
+      dut.io_decoder.instr.poke(instr)
+      dut.clock.step()
+      dut.io_decoder.rs1.expect(7.U)
+      dut.io_decoder.rs2.expect(0.U)
+      dut.io_decoder.rd .expect(6.U)
+      dut.io_decoder.imm.expect("hFFFFFFFC".U) // sign-extended -4
+    }
+  }
+  
+  it should "decode a negative load immediate (lw)" in {
+    test(new Decoder) { dut =>
+      val hex = RISCVAssembler.fromString("lw x3, -8(x4)").split("\n")(0)
+      val instr = BigInt(hex, 16).U
+      dut.io_decoder.instr.poke(instr)
+      dut.clock.step()
+      dut.io_decoder.imm.expect("hFFFFFFF8".U)
+    }
+  }
+
 
   it should "decode a negative value" in {
     test(new Decoder) { dut =>
@@ -46,6 +85,7 @@ class InitialTest extends AnyFlatSpec with ChiselScalatestTester with Matchers {
       dut.io_decoder.imm.expect(BigInt("FFFFFFFC", 16).U)
     }
   }
+  
 
   it should "detect a branch" in {
     test(new ControlUnit) { dut =>
