@@ -54,7 +54,7 @@ class BitPermutationUnit(
   val ror = funct3 === "b101".U && funct7 === "b0110000".U && !io.instr(30)
   val rori = funct3 === "b101".U && funct7 === "b0110000".U && io.instr(30)
 
-  val usesImm = grevi || shfli || unshfli || rori
+  val isImmInstr = grevi || shfli || unshfli || rori
   val validInstr = io.valid && (grev || grevi || shfl || shfli || unshfl || unshfli || rol || ror || rori)
 
   /* Let the speculative execution commence */
@@ -92,8 +92,14 @@ class BitPermutationUnit(
   io_reg.reg_rd := rd
   io_reg.reg_write_data := result
   io_reg.reg_rs1 := rs1
+  
   // if immediate then r2 is 0
-  io_reg.reg_rs2 := Mux(usesImm, 0.U, rs2)
+  when(grev) {
+    io_reg.reg_rs2 := rs2
+  }.otherwise{
+    io_reg.reg_rs2 := Mux(isImmInstr, 0.U, rs2)
+  }
+  
   // increment program counter by + 4
   io_pc.pc_we := validInstr && !shouldStall
   io_pc.pc_wdata := io_pc.pc + 4.U
