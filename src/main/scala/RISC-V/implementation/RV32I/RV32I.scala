@@ -83,7 +83,7 @@ class RV32I(
           io_reg.reg_write_data := Fill(24, 0.U) ## memData(7,0)
         }
         is(RISCV_FUNCT3.F101){
-          io_reg.reg_write_data := Fill(24, 0.U) ## memData(15,0)
+          io_reg.reg_write_data := Fill(16, 0.U) ## memData(15,0)
         }
       }
     }
