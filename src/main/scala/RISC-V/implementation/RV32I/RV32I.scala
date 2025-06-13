@@ -62,6 +62,10 @@ class RV32I(
   io_reg.reg_rd := decoder.io_decoder.rd
   io_reg.reg_write_en := control_unit.io_ctrl.reg_we
   io_reg.reg_write_data := 0.U
+
+  val f3 = RISCV_TYPE.getFunct3(control_unit.io_ctrl.instr_type)
+  val memData = io_data.data_rdata
+
   switch(control_unit.io_ctrl.reg_write_sel) {
     is(REG_WRITE_SEL.ALU_OUT) {
       io_reg.reg_write_data := alu.io_alu.result
@@ -71,6 +75,31 @@ class RV32I(
     }
     is(REG_WRITE_SEL.PC_PLUS_4) {
       io_reg.reg_write_data := io_pc.pc + 4.U
+    }
+    // Loads with zero extension
+    is(REG_WRITE_SEL.MEM_OUT_ZERO_EXTENDED) {
+      switch(f3){
+        is(RISCV_FUNCT3.F100){
+          io_reg.reg_write_data := Fill(24, 0.U) ## memData(7,0)
+        }
+        is(RISCV_FUNCT3.F101){
+          io_reg.reg_write_data := Fill(24, 0.U) ## memData(15,0)
+        }
+      }
+    }
+    // Loads with sign extension
+    is(REG_WRITE_SEL.MEM_OUT_SIGN_EXTENDED) {
+      switch(f3){
+        is(RISCV_FUNCT3.F000){
+          io_reg.reg_write_data := Fill(24, memData(7)) ## memData(7,0)
+        }
+        is(RISCV_FUNCT3.F001){
+          io_reg.reg_write_data := Fill(16, memData(15)) ## memData(15,0)
+        }
+        is(RISCV_FUNCT3.F010){
+          io_reg.reg_write_data := memData
+        }
+      }
     }
   }
 
