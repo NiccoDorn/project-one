@@ -45,6 +45,14 @@ class RV32I(
         (io_pc.pc + 4.U)
       )
     }
+    // For JAL we have PC + Imm
+    is(NEXT_PC_SELECT.IMM) {
+      io_pc.pc_wdata := io_pc.pc + decoder.io_decoder.imm
+    }
+    // For JALR we have PC = ALU result ([rs1] + SignExt(Imm))
+    is(NEXT_PC_SELECT.ALU_OUT_ALIGNED){
+      io_pc.pc_wdata := alu.io_alu.result
+    }
   }
   io_pc.pc_we := control_unit.io_ctrl.stall === STALL_REASON.NO_STALL
 
