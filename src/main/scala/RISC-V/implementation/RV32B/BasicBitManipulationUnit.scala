@@ -69,13 +69,13 @@ val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
   val cltz_res = leadingZerosCounter.io.result
   
   // cpop
-  
+  val cpop_res = PopCount(rs1_data)
 
 
-  
-    
-
-  val minMax = Module(new minMax(bitWidth,(max || min)))
+  //min max minu maxu
+  println("schnauze")
+  val minMax = Module(new minMax(bitWidth,0))
+  minMax.io.sign := (max || min)
   minMax.io.in1 := rs1_data
   minMax.io.in2 := rs2_data
   val min_res = minMax.io.min
@@ -85,7 +85,7 @@ val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
   /* get true instruction result using MuxCase - *plopp* noice! */
   val result = MuxCase(0.U, Seq(
     (clz || ctz) -> cltz_res,
-    //(cpop) -> cpop_res,
+    (cpop) -> cpop_res,
     (min || minu) -> min_res,
     (max ||maxu) -> max_res
   ))
@@ -117,38 +117,56 @@ class reverser (bitWidth: Int) extends Module {
   }
 }
 
-class minMax (bitWidth: Int, sign: Bool) extends Module {
+
+class minMax (bitWidth: Int, depth: Int) extends Module {
   val io = IO(new Bundle {
+    val sign = Input(Bool())
     val in1 = Input(UInt(bitWidth.W))
     val in2 = Input(UInt(bitWidth.W))
     val min = Output(UInt(bitWidth.W))
     val max = Output(UInt(bitWidth.W))
   })
-
+//println(depth)
   //most significant bit determins max (iff unequal of)
-  when (sign) {
-    when(io.in1(bitWidth-1)===io.in2(bitWidth-1)){
-     val minMax_rec = Module(new minMax(bitWidth-1,0.B))
-     minMax_rec.io.in1 := io.in1(bitWidth-2,0)
-     minMax_rec.io.in2 := io.in2(bitWidth-2,0)
+     if (bitWidth <= 1){
 
-     io.max := minMax_rec.io.max
-     io.min := minMax_rec.io.min
-    }otherwise{
-      io.max := Mux(io.in2(bitWidth-1),io.in1,io.in2)
-      io.min := Mux(io.in1(bitWidth-1),io.in1,io.in2)
-    }
-  } otherwise{
-     if (bitWidth == 1){
       io.max := Mux(io.in1(0)^io.in2(0) && io.in1(0),io.in1,io.in2)
       io.min := Mux(io.in1(0)^io.in2(0) && io.in1(0),io.in2,io.in1)
     } else {
+      val minMax_rec = Module(new minMax(bitWidth-1,depth+1))
+      when (io.sign) {
+        when(io.in1(bitWidth-1)===io.in2(bitWidth-1)){
+          
+         // 
+          minMax_rec.io.sign := 0.B
+          minMax_rec.io.in1 := io.in1(bitWidth-2,0)
+          minMax_rec.io.in2 := io.in2(bitWidth-2,0)
+
+          io.max := minMax_rec.io.max
+          io.min := minMax_rec.io.min
+        }otherwise{
+          io.max := Mux(io.in2(bitWidth-1),io.in1,io.in2)
+          io.min := Mux(io.in1(bitWidth-1),io.in1,io.in2)
+
+          minMax_rec.io.sign := 0.B
+          minMax_rec.io.in1 := 0.U
+          minMax_rec.io.in2 := 0.U
+
+
+      }
+    }otherwise{
+
       when(io.in1(bitWidth-1)^io.in2(bitWidth-1)){
         io.max := Mux(io.in1(bitWidth-1),io.in1,io.in2)
         io.min := Mux(io.in2(bitWidth-1),io.in1,io.in2)
+        
+          minMax_rec.io.sign := 0.B
+          minMax_rec.io.in1 := 0.U
+          minMax_rec.io.in2 := 0.U
       }otherwise{
       //init recusiveness
-      val minMax_rec = Module(new minMax(bitWidth-1,0.B))
+      //val minMax_rec = Module(new minMax(bitWidth-1,depth+1))
+      minMax_rec.io.sign := 0.B
       minMax_rec.io.in1 := io.in1(bitWidth-2,0)
       minMax_rec.io.in2 := io.in2(bitWidth-2,0)
 
