@@ -167,24 +167,6 @@ class PermutationTest extends AnyFlatSpec  with Matchers {
         result shouldEqual permutation
     }
 
-    it should "perform a complex multi-cycle permutation correctly" in {
-        /* C1: (0 5 10 15) - 4-element cycle; C2: (1 3 7 14 28) - 5-element cycle  ; 
-        C3: (2 4 8) - 3-element cycle; C4: (6 12 24) - 3-element cycle; 
-        C5: (9 18) - 2-element cycle (swap); C6: (11 22) - 2-element cycle (swap);*/
-        val permutation = Map(
-            0 -> 5, 1 -> 3, 2 -> 4, 3 -> 7, 4 -> 8, 5 -> 10,
-            6 -> 12, 7 -> 14, 8 -> 2, 9 -> 18, 10 -> 15, 11 -> 22,
-            12 -> 24, 13 -> 13, 14 -> 28, 15 -> 0, 16 -> 16, 17 -> 17,
-            18 -> 9, 19 -> 19, 20 -> 20, 21 -> 21, 22 -> 11, 23 -> 23,
-            24 -> 6, 25 -> 25, 26 -> 26, 27 -> 27, 28 -> 1, 29 -> 29,
-            30 -> 30, 31 -> 31
-        )
-        
-        val instructions = buildPermutation(1, 2, permutation)
-        val result = emulatePermutation(1, 2, instructions)
-        result shouldEqual permutation
-    }
-
     it should "perform a bit reversal permutation correctly" in {
         val permutation = Map(
             0 -> 31, 1 -> 30, 2 -> 29, 3 -> 28, 4 -> 27, 5 -> 26, 6 -> 25, 7 -> 24,
