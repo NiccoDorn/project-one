@@ -1,6 +1,5 @@
 # Contributions
-
-Nico: Providing Github Repo to work on things + setup.
+Nico: Providing Github Repo to work on things + setup. Managing pull requests, updating tests from organizers etc.
 
 # Use of AI tools
 
