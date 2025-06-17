@@ -50,7 +50,7 @@ class BasicBitManipulationUnit(
   val ctz = funct3 === "b001".U && funct7 === "b0110000".U && op === "b0010011".U && rs2 === "b00001".U
   val cpop = funct3 === "b001".U && funct7 === "b0110000".U && op === "b0010011".U && rs2 === "b00010".U
 
-val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
+  val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
 
 
  when(clz){
@@ -61,20 +61,15 @@ val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
   val reverser = Module(new reverser(bitWidth))
   reverser.io.input := rs1_data
   leadingZerosCounter.io.input := reverser.io.result
-  when(ctz){
-    printf(p"\n rs1 = 0x${Hexadecimal(rs1_data)}, rev = 0x${Hexadecimal(reverser.io.result)}\n")
- }}
- 
- 
+  }
   val cltz_res = leadingZerosCounter.io.result
   
   // cpop
   val cpop_res = PopCount(rs1_data)
 
 
-  //min max minu maxu
-  println("schnauze")
-  val minMax = Module(new minMax(bitWidth,0))
+  //min, max, minu, max
+  val minMax = Module(new minMax(bitWidth))
   minMax.io.sign := (max || min)
   minMax.io.in1 := rs1_data
   minMax.io.in2 := rs2_data
@@ -102,6 +97,7 @@ val validInstr = io.valid && (clz || cpop || ctz || maxu || max || minu || min)
   io_pc.pc_wdata := io_pc.pc + 4.U
 }
 
+// reverser used for ctz
 class reverser (bitWidth: Int) extends Module {
   val io = IO(new Bundle {
     val input = Input(UInt(bitWidth.W))
@@ -118,7 +114,7 @@ class reverser (bitWidth: Int) extends Module {
 }
 
 
-class minMax (bitWidth: Int, depth: Int) extends Module {
+class minMax (bitWidth: Int) extends Module {
   val io = IO(new Bundle {
     val sign = Input(Bool())
     val in1 = Input(UInt(bitWidth.W))
@@ -126,21 +122,22 @@ class minMax (bitWidth: Int, depth: Int) extends Module {
     val min = Output(UInt(bitWidth.W))
     val max = Output(UInt(bitWidth.W))
   })
-//println(depth)
-  //most significant bit determins max (iff unequal of)
-     if (bitWidth <= 1){
+  // If signed and MSB1 != MSB2, they are determins min/max
+  // else most significant 1 determins max (iff unequal)
 
+     if (bitWidth <= 1){
+      //Base Case
       io.max := Mux(io.in1(0)^io.in2(0) && io.in1(0),io.in1,io.in2)
       io.min := Mux(io.in1(0)^io.in2(0) && io.in1(0),io.in2,io.in1)
     } else {
-      val minMax_rec = Module(new minMax(bitWidth-1,depth+1))
+      //Rec. Case
+      val minMax_rec = Module(new minMax(bitWidth-1))
       when (io.sign) {
         when(io.in1(bitWidth-1)===io.in2(bitWidth-1)){
           
-         // 
-          minMax_rec.io.sign := 0.B
-          minMax_rec.io.in1 := io.in1(bitWidth-2,0)
-          minMax_rec.io.in2 := io.in2(bitWidth-2,0)
+          minMax_rec.io.sign := 0.B                 
+          minMax_rec.io.in1 := io.in1(bitWidth-2,0) 
+          minMax_rec.io.in2 := io.in2(bitWidth-2,0) 
 
           io.max := minMax_rec.io.max
           io.min := minMax_rec.io.min
@@ -148,9 +145,9 @@ class minMax (bitWidth: Int, depth: Int) extends Module {
           io.max := Mux(io.in2(bitWidth-1),io.in1,io.in2)
           io.min := Mux(io.in1(bitWidth-1),io.in1,io.in2)
 
-          minMax_rec.io.sign := 0.B
-          minMax_rec.io.in1 := 0.U
-          minMax_rec.io.in2 := 0.U
+          minMax_rec.io.sign := 0.B // \ 
+          minMax_rec.io.in1 := 0.U  //  } not actual recursion happens, 
+          minMax_rec.io.in2 := 0.U  // /  but the assignment is needed
 
 
       }
@@ -160,12 +157,10 @@ class minMax (bitWidth: Int, depth: Int) extends Module {
         io.max := Mux(io.in1(bitWidth-1),io.in1,io.in2)
         io.min := Mux(io.in2(bitWidth-1),io.in1,io.in2)
         
-          minMax_rec.io.sign := 0.B
-          minMax_rec.io.in1 := 0.U
-          minMax_rec.io.in2 := 0.U
+          minMax_rec.io.sign := 0.B // \ 
+          minMax_rec.io.in1 := 0.U  //  } not actual recursion happens, 
+          minMax_rec.io.in2 := 0.U  // /  but the assignment is needed
       }otherwise{
-      //init recusiveness
-      //val minMax_rec = Module(new minMax(bitWidth-1,depth+1))
       minMax_rec.io.sign := 0.B
       minMax_rec.io.in1 := io.in1(bitWidth-2,0)
       minMax_rec.io.in2 := io.in2(bitWidth-2,0)
