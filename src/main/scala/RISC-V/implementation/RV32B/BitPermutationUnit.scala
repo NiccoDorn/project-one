@@ -57,7 +57,7 @@ class BitPermutationUnit(
 
   val isImmInstr = grevi || shfli || unshfli || rori
   val validInstr = io.valid && (grev || grevi || shfl || shfli || unshfl || unshfli || rol || ror || rori)
-println("checkpoint1")
+
   /* Let the speculative execution commence */
   val rs1_data = io_reg.reg_read_data1
   val rs2_data = io_reg.reg_read_data2
@@ -77,7 +77,7 @@ println("checkpoint1")
   val grevRes = generalizedReverser.io.result
   val shflRes = shuffler.io.result
   val rotRes = rotater.io.result
-println("checkpoint2")
+
   /* get true instruction result using MuxCase - *plopp* noice! */
   val result = MuxCase(0.U, Seq(
     (grev || grevi) -> grevRes,
@@ -90,14 +90,14 @@ println("checkpoint2")
   val shouldStall = validInstr && isRotOp && !rotater.io.done
   io.stall := Mux(shouldStall, STALL_REASON.EXECUTION_UNIT, STALL_REASON.NO_STALL)
   
-println("checkpoint3")
+
   // write back if valid and not stalled
   io_reg.reg_write_en := validInstr && !shouldStall
   io_reg.reg_rd := rd
   io_reg.reg_write_data := result
   io_reg.reg_rs1 := rs1
   
-println("checkpoint4")
+
   // if immediate then r2 is 0
   when(grev) {
     io_reg.reg_rs2 := rs2
@@ -105,9 +105,8 @@ println("checkpoint4")
     io_reg.reg_rs2 := Mux(isImmInstr, 0.U, rs2)
   }
 
-println("checkpoint5")
+
   // increment program counter by + 4
   io_pc.pc_we := validInstr && !shouldStall
   io_pc.pc_wdata := io_pc.pc + 4.U
-println("checkpoint6")
 }
