@@ -168,7 +168,7 @@ class BitPermutationTest
             )
         )
       )
-    ).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) {
+    ).withAnnotations(Seq(WriteVcdAnnotation)) {
       dut =>
         var registers =
           generateRandomMap(
