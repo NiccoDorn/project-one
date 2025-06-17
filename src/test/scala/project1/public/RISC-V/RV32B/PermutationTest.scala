@@ -4,6 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import RISCV.utils.PermBuilder.buildPermutation
 
+
 class PermutationTest extends AnyFlatSpec  with Matchers {
 
     behavior of "CustomPermutation"

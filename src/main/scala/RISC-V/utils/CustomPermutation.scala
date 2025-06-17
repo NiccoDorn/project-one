@@ -2,6 +2,10 @@ package RISCV.utils
 
 import scala.collection.mutable.{Queue, Map => MutableMap}
 
+/* import java.nio.file.{Files, Paths}
+import java.nio.charset.StandardCharsets
+import java.nio.file.StandardOpenOption */
+
 object PermBuilder {
 
   def mapToArray(p: Map[Int, Int]): Array[Int] = { // converts for BFS-Queue algo
@@ -29,6 +33,12 @@ object PermBuilder {
     } else { None }
   }
 
+  // copied function from PermutationTest.scala HIHIHI
+  def performRotation(permutation: List[Int], immediate: Int): List[Int] = {
+    val n = immediate & 31
+    permutation.drop(n) ++ permutation.take(n)
+  }
+
   // helper for mapping
   def doTransform(curr: Array[Int], transform: String): Array[Int] = {
     val newArr = Array.ofDim[Int](32)
@@ -36,10 +46,13 @@ object PermBuilder {
     transform match {
       case s if s.contains("rori") =>
         val amount = extractImm(s)
-        for (i <- 0 until 32) {
-          val src_pos_before_rori = (i - amount + 32) % 32
-          newArr(i) = curr(src_pos_before_rori)
-        }
+        val rotated = performRotation(curr.toList, amount) // can I be cheecky here?
+        rotated.toArray.copyToArray(newArr)
+      
+      /*case s if s.contains("roli") => // maybe this case is missing?
+        val immediate = extractImm(s)
+        val rotated = performRotation(curr.toList, 32 - immediate % 32) // can I be cheecky here?
+        rotated.toArray.copyToArray(newArr)*/
 
       case s if s.contains("grevi") =>
         val pattern = extractImm(s)
@@ -229,9 +242,19 @@ object PermBuilder {
     }
 
     // search depths
-    for (depth <- 1 to 4) { // adjust
+    for (depth <- 1 to 3) { // adjust
       getInstrBFS(identArr, targetArr, depth) match {
-        case Some(res) => return res
+        case Some(res) =>
+          /*val outputPath = Paths.get("output.txt")
+          val header = s"# rd = $rd, rs1 = $rs1\n"
+          val content = res.mkString("\n") + "\n\n"
+          Files.write(
+            outputPath,
+            (header + content).getBytes(StandardCharsets.UTF_8),
+            StandardOpenOption.CREATE,
+            StandardOpenOption.APPEND
+          )*/
+          return res
         case None =>
       }
     }
