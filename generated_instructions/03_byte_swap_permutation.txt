@@ -1,0 +1,2 @@
+rori x1 x1 16
+grevi x1 x1 0x8
