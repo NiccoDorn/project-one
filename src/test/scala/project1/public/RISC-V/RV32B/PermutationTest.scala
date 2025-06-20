@@ -172,13 +172,13 @@ class PermutationTest extends AnyFlatSpec with Matchers {
                 case _ => throw new IllegalArgumentException(s"Unknown instruction: $opcode")
             }
         }
-        permutation.zipWithIndex.toMap
+        permutation.zipWithIndex.map(_.swap).toMap
 
     }
 
     it should "perform a simple rotation correctly" in {
-        val permutation = List(1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31).zipWithIndex.map(_.swap).toMap
+        val permutation = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0).zipWithIndex.map(_.swap).toMap
         val instructions = buildPermutation(1, 2, permutation)
         instructions should not be empty
         writeInstructionsToFile("01_simple_rotation", instructions)
@@ -343,7 +343,7 @@ class PermutationTest extends AnyFlatSpec with Matchers {
         val result = emulatePermutation(1, 2, instructions)
         result shouldEqual permutation
     }
-    /*
+    
     it should "perform pairwise swaps at word ends (0,1 and 30,31) correctly" in {
         val initialList = List.range(0, 32)
         val targetList: List[Int] = initialList
@@ -357,5 +357,5 @@ class PermutationTest extends AnyFlatSpec with Matchers {
         writeInstructionsToFile("13_LSBs_MSBs_swaps", instructions)
         val result = emulatePermutation(1, 2, instructions)
         result shouldEqual permutation
-    }*/
+    }
 }

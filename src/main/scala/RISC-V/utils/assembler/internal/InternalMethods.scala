@@ -36,7 +36,8 @@ protected object PreProcess {
             throw new IllegalArgumentException("Invalid permutation index. Indices must be unique.")
         }
         // create the instruction
-        return buildPermutation(rd, rs1, permBits.toList.map(_.toInt).reverse.zipWithIndex.toMap)
+        return buildPermutation(rd, rs1, permBits.toList.map(_.toInt).reverse.zipWithIndex.map(_.swap).toMap)
+
     }
   
     /**

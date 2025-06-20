@@ -229,6 +229,25 @@ object PermBuilder {
       }
   }
 
+  /** This function takes a mapping for the permutation and returns the list of
+  * necessary instructions to implement the permutation.
+  *
+  * You may assume that the map encodes a valid permutation, i.e., that every
+  * destination bit is associated with a unique source bit.
+  *
+  * You may only write to register rd.
+  *
+  * @param rd
+  *   The destination register
+  * @param rs1
+  *   The source register
+  * @param perm
+  *   A map representing the permutation, mapping destination bit
+  *   positions to source bit positions.
+  * @return
+  *   A list of strings representing the instructions to implement the
+  *   permutation e.g. List("grevi x1, x2, 0x01", "grevi x1, x2, 0x02", ...)
+  */
   def buildPermutation(rd: Int, rs1: Int, perm: Map[Int, Int]): List[String] = {
     val targetArr = mapToArray(perm)
     val reg = s"x$rd"

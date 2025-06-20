@@ -1,6 +1,1 @@
-grevi x1 x1 31
-rori x1, x1, 30
-unshfli x1, x1, 0xf
 rori x1, x1, 1
-shfli x1, x1, 0xf
-grevi x1 x1 31
