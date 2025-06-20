@@ -1,1 +1,3 @@
-grevi x1 x1 0x1f
+grevi x1 x1 31
+grevi x1, x1, 0x1f
+grevi x1 x1 31

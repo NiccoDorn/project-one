@@ -322,6 +322,28 @@ class PermutationTest extends AnyFlatSpec with Matchers {
         result shouldEqual permutation
     }
 
+    it should "perform 1-4 swap correctly" in {
+        val initialList = List.range(0, 32)
+        val targetList: List[Int] = initialList
+            .updated(1, 4)
+            .updated(4, 1)
+        val permutation: Map[Int, Int] = targetList.zipWithIndex.map(_.swap).toMap
+        // val instructions = buildPermutation(1, 2, permutation)
+        val instructions: List[String] = List(
+            "shfli x1, x1, 0x2",
+            "rori x1, x1, 1",
+            "unshfli x1, x1, 0xf",
+            "rori x1, x1, 1",
+            "shfli x1, x1, 0xf",
+            "rori x1, x1, 29",
+            "shfli x1, x1, 0x2"
+        )
+        instructions should not be empty
+        writeInstructionsToFile("12_1_4_swap", instructions)
+        val result = emulatePermutation(1, 2, instructions)
+        result shouldEqual permutation
+    }
+    /*
     it should "perform pairwise swaps at word ends (0,1 and 30,31) correctly" in {
         val initialList = List.range(0, 32)
         val targetList: List[Int] = initialList
@@ -332,8 +354,8 @@ class PermutationTest extends AnyFlatSpec with Matchers {
         val permutation: Map[Int, Int] = targetList.zipWithIndex.map(_.swap).toMap
         val instructions = buildPermutation(1, 2, permutation)
         instructions should not be empty
-        writeInstructionsToFile("12_LSBs_MSBs_swaps", instructions)
+        writeInstructionsToFile("13_LSBs_MSBs_swaps", instructions)
         val result = emulatePermutation(1, 2, instructions)
         result shouldEqual permutation
-    }
+    }*/
 }

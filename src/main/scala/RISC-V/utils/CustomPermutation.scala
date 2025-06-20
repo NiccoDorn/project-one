@@ -1,6 +1,7 @@
 package RISCV.utils
 
-import scala.collection.mutable.{Queue, Set => MutableSet}
+import scala.collection.mutable.{Queue, Map => MutableMap}
+import scala.annotation.tailrec
 
 object PermBuilder {
 
@@ -18,167 +19,193 @@ object PermBuilder {
     (0 until 32).forall(i => p(i) == i)
   }
 
-  def isRot(p: Array[Int]): Option[Int] = {
-    val possShifts = (0 until 32).map { i =>
-      (p(i) - i + 32) % 32
+  private def applyGrevi(p: Array[Int], imm: Int): Array[Int] = {
+    val newArr = new Array[Int](32)
+    for (i <- 0 until 32) {
+      var oldIdx = i
+      if ((imm & (1 << 4)) != 0) oldIdx = if (oldIdx >= 16) oldIdx - 16 else oldIdx + 16
+      if ((imm & (1 << 3)) != 0) oldIdx = if ((oldIdx % 16) >= 8) oldIdx - 8 else oldIdx + 8
+      if ((imm & (1 << 2)) != 0) oldIdx = if ((oldIdx % 8) >= 4) oldIdx - 4 else oldIdx + 4
+      if ((imm & (1 << 1)) != 0) oldIdx = if ((oldIdx % 4) >= 2) oldIdx - 2 else oldIdx + 2
+      if ((imm & (1 << 0)) != 0) oldIdx = if ((oldIdx % 2) == 1) oldIdx - 1 else oldIdx + 1
+      newArr(i) = p(oldIdx)
     }
-    val firstShift = possShifts(0)
-    if (possShifts.forall(_ == firstShift)) {
-      Some(firstShift)
-    } else { None }
+    newArr
   }
-
-  def doTransform(curr: Array[Int], transform: String): Array[Int] = {
-    val newArr = Array.fill(32)(0)
-
-    def applyGrevi(i: Int, imm: Int): Int = {
-      var idx = i
-      if ((imm & (1 << 0)) != 0) idx = if (idx % 2 == 0) idx + 1 else idx - 1
-      if ((imm & (1 << 1)) != 0) idx = if ((idx % 4) < 2) idx + 2 else idx - 2
-      if ((imm & (1 << 2)) != 0) idx = if ((idx % 8) < 4) idx + 4 else idx - 4
-      if ((imm & (1 << 3)) != 0) idx = if ((idx % 16) < 8) idx + 8 else idx - 8
-      if ((imm & (1 << 4)) != 0) idx = if (idx < 16) idx + 16 else idx - 16
-      idx
+  
+  private def applyShfli(p: Array[Int], imm: Int): Array[Int] = {
+    val newArr = new Array[Int](32)
+    for (i <- 0 until 32) {
+      var oldIdx = i
+      if ((imm & (1 << 0)) != 0) oldIdx = (oldIdx % 4) match {
+        case 1 => oldIdx + 1
+        case 2 => oldIdx - 1
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 1)) != 0) oldIdx = (oldIdx % 8 / 2) match {
+        case 1 => oldIdx + 2
+        case 2 => oldIdx - 2
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 2)) != 0) oldIdx = (oldIdx % 16 / 4) match {
+        case 1 => oldIdx + 4
+        case 2 => oldIdx - 4
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 3)) != 0) oldIdx = (oldIdx % 32 / 8) match {
+        case 1 => oldIdx + 8
+        case 2 => oldIdx - 8
+        case _ => oldIdx
+      }
+      newArr(i) = p(oldIdx)
     }
-
-    def applyShfli(i: Int, imm: Int): Int = {
-      var idx = i
-      if ((imm & (1 << 0)) != 0) idx = (idx % 4) match {
-        case 1 => idx + 1
-        case 2 => idx - 1
-        case _ => idx
-      }
-      if ((imm & (1 << 1)) != 0) idx = (idx % 8 / 2) match {
-        case 1 => idx + 2
-        case 2 => idx - 2
-        case _ => idx
-      }
-      if ((imm & (1 << 2)) != 0) idx = (idx % 16 / 4) match {
-        case 1 => idx + 4
-        case 2 => idx - 4
-        case _ => idx
-      }
-      if ((imm & (1 << 3)) != 0) idx = (idx % 32 / 8) match {
-        case 1 => idx + 8
-        case 2 => idx - 8
-        case _ => idx
-      }
-      idx
-    }
-
-    def applyUnshfli(i: Int, imm: Int): Int = {
-      var idx = i
-      if ((imm & (1 << 3)) != 0) idx = (idx % 32 / 8) match {
-        case 1 => idx + 8
-        case 2 => idx - 8
-        case _ => idx
-      }
-      if ((imm & (1 << 2)) != 0) idx = (idx % 16 / 4) match {
-        case 1 => idx + 4
-        case 2 => idx - 4
-        case _ => idx
-      }
-      if ((imm & (1 << 1)) != 0) idx = (idx % 8 / 2) match {
-        case 1 => idx + 2
-        case 2 => idx - 2
-        case _ => idx
-      }
-      if ((imm & (1 << 0)) != 0) idx = (idx % 4) match {
-        case 1 => idx + 1
-        case 2 => idx - 1
-        case _ => idx
-      }
-      idx
-    }
-
-    val imm = extractImm(transform)
-    if (transform.startsWith("rori")) {
-      for (i <- 0 until 32) newArr(i) = curr((i + imm) % 32)
-    } else if (transform.startsWith("grevi")) {
-      for (i <- 0 until 32) newArr(i) = curr(applyGrevi(i, imm))
-    } else if (transform.startsWith("shfli")) {
-      for (i <- 0 until 32) newArr(i) = curr(applyShfli(i, imm))
-    } else if (transform.startsWith("unshfli")) {
-      for (i <- 0 until 32) newArr(i) = curr(applyUnshfli(i, imm))
-    } else {
-      return curr.clone()
-    }
-
     newArr
   }
 
-
-  def extractImm(instr: String): Int = {
-    val parts = instr.split(" ")
-    if (parts.length >= 4) {
-      val immStr = parts(3).trim
-      if (immStr.startsWith("0x")) {
-        Integer.parseInt(immStr.substring(2), 16)
-      } else { immStr.toInt }
-    } else 0
+  private def applyUnshfli(p: Array[Int], imm: Int): Array[Int] = {
+    val newArr = new Array[Int](32)
+    for (i <- 0 until 32) {
+      var oldIdx = i
+      if ((imm & (1 << 3)) != 0) oldIdx = (oldIdx % 32 / 8) match {
+        case 1 => oldIdx + 8
+        case 2 => oldIdx - 8
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 2)) != 0) oldIdx = (oldIdx % 16 / 4) match {
+        case 1 => oldIdx + 4
+        case 2 => oldIdx - 4
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 1)) != 0) oldIdx = (oldIdx % 8 / 2) match {
+        case 1 => oldIdx + 2
+        case 2 => oldIdx - 2
+        case _ => oldIdx
+      }
+      if ((imm & (1 << 0)) != 0) oldIdx = (oldIdx % 4) match {
+        case 1 => oldIdx + 1
+        case 2 => oldIdx - 1
+        case _ => oldIdx
+      }
+      newArr(i) = p(oldIdx)
+    }
+    newArr
   }
 
-  def detectSpecialPatterns(perm: Map[Int, Int]): Option[String] = {
-    val arr = mapToArray(perm)
-  
-    if ((0 until 32 by 2).forall(i => arr(i) == i+1 && arr(i+1) == i)) {
-      return Some("grevi x1, x1, 0x1")
+  def rotateRight(p: Array[Int], n: Int): Array[Int] = {
+    val amount = n & 31
+    val newArr = new Array[Int](32)
+    for (i <- 0 until 32) {
+      newArr((i + amount) % 32) = p(i)
     }
-    
-    if ((0 until 32 by 4).forall(i => arr(i) == i+2 && arr(i+1) == i+3 && arr(i+2) == i && arr(i+3) == i+1)) {
-      return Some("grevi x1, x1, 0x2")
-    }
-
-    if ((0 until 32 by 8).forall(i => (0 until 4).forall(j => arr(i+j) == i+j+4 && arr(i+j+4) == i+j))) {
-      return Some("grevi x1, x1, 0x4")
-    }
-
-    if ((0 until 32 by 16).forall(i => (0 until 8).forall(j => arr(i+j) == i+j+8 && arr(i+j+8) == i+j))) {
-      return Some("grevi x1, x1, 0x8")
-    }
-    
-    if ((0 until 16).forall(i => arr(i) == i+16 && arr(i+16) == i)) {
-      return Some("grevi x1, x1, 0x10")
-    }
-    
-    None
+    newArr
   }
 
-  def getInstrBFS(rd: Int, initialState: Array[Int], targetState: Array[Int], maxDepth: Int): Option[List[String]] = {
-    if (initialState.sameElements(targetState)) return Some(List())
-    
-    val visited = MutableSet[String]()
-    val queue = Queue((initialState, List[String]()))
-    visited.add(initialState.mkString(","))
-    
-    val roriImms = List(2, 31, 1, 4, 8, 16, 30, 28, 24, 15)
-    val shfliUnshfliImms = List(0x1f, 0x1, 0x2, 0x4, 0x8, 0x10, 0x3, 0x5, 0x6, 0x7, 0xf)
-    val greviImms = List(0x1, 0x2, 0x4, 0x8, 0x10, 0x3, 0x5, 0x6, 0x7, 0xf, 0x1f)
+  def rotateLeft(p: Array[Int], n: Int): Array[Int] = {
+    rotateRight(p, 32 - (n & 31))
+  }
 
-    val roriCands = roriImms.map(imm => s"rori x$rd x$rd $imm")
-    val shfliCands = shfliUnshfliImms.map(imm => s"shfli x$rd x$rd 0x${imm.toHexString}")
-    val unshfliCands = shfliUnshfliImms.map(imm => s"unshfli x$rd x$rd 0x${imm.toHexString}")
-    val greviCands = greviImms.map(imm => s"grevi x$rd x$rd 0x${imm.toHexString}")
-    
-    val allCands = roriCands ++ unshfliCands ++ shfliCands ++ greviCands
+  case class OperationInfo(
+    name: String,
+    opType: String,
+    imm: Int,
+    func: Array[Int] => Array[Int],
+    reverseFunc: Array[Int] => Array[Int]
+  )
 
-    while (queue.nonEmpty) {
-      val (currArr, instrList) = queue.dequeue()
+  case class State(
+    perm: List[Int],
+    path: List[String],
+    lastOpType: String = "",
+    lastOpImm: Int = 0
+  )
 
-      if (instrList.length < maxDepth) {
-        for (cand <- allCands) {
-          val newCurrArr = doTransform(currArr, cand)
-          val stateKey = newCurrArr.mkString(",")
-          
-          if (!visited.contains(stateKey)) {
-            visited.add(stateKey)
-            val newInstrList = instrList :+ cand
-            
-            if (newCurrArr.sameElements(targetState)) {
-              return Some(newInstrList)
+  def findInstructionSequence(targetState: Array[Int], maxDepth: Int, reg: String): Option[List[String]] = {
+    val identityPerm = Array.tabulate(32)(i => i)
+    if (targetState.sameElements(identityPerm)) return Some(List())
+
+    val ops = {
+      val roriOps = (1 until 32).map(i => 
+        OperationInfo(s"rori $reg, $reg, $i", "rori", i, p => rotateRight(p, i), p => rotateLeft(p, i))
+      )
+      val shfliOps = (1 until 16).map(i => 
+        OperationInfo(f"shfli $reg, $reg, 0x$i%x", "shfli", i, p => applyShfli(p, i), p => applyUnshfli(p, i))
+      )
+      val unshfliOps = (1 until 16).map(i => 
+        OperationInfo(f"unshfli $reg, $reg, 0x$i%x", "unshfli", i, p => applyUnshfli(p, i), p => applyShfli(p, i))
+      )
+      val greviOps = (1 until 32).map(i => 
+        OperationInfo(f"grevi $reg, $reg, 0x$i%x", "grevi", i, p => applyGrevi(p, i), p => applyGrevi(p, i))
+      )
+      roriOps ++ shfliOps ++ unshfliOps ++ greviOps
+    }
+
+    val fwdQueue = Queue(State(identityPerm.toList, List()))
+    val bwdQueue = Queue(State(targetState.toList, List()))
+
+    val fwdVisited = MutableMap[List[Int], List[String]](identityPerm.toList -> List())
+    val bwdVisited = MutableMap[List[Int], List[String]](targetState.toList -> List())
+
+    for (depth <- 0 to maxDepth) {
+      val fwdLayerSize = fwdQueue.size
+      for (_ <- 0 until fwdLayerSize) {
+        val curr = fwdQueue.dequeue()
+
+        if (bwdVisited.contains(curr.perm)) {
+          val fwdPath = curr.path
+          val bwdPath = bwdVisited(curr.perm)
+          return Some(fwdPath ++ bwdPath.reverse)
+        }
+
+        if (curr.path.length < maxDepth) {
+          for (op <- ops) {
+            var skip = false
+            if (curr.lastOpType.nonEmpty) {
+              if (op.opType == "grevi" && curr.lastOpType == "grevi" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "shfli" && curr.lastOpType == "unshfli" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "unshfli" && curr.lastOpType == "shfli" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "rori" && curr.lastOpType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0) skip = true
+            }
+
+            if (!skip) {
+              val nextPerm = op.func(curr.perm.toArray).toList
+              if (!fwdVisited.contains(nextPerm)) {
+                val nextPath = curr.path :+ op.name
+                fwdVisited(nextPerm) = nextPath
+                fwdQueue.enqueue(State(nextPerm, nextPath, op.opType, op.imm))
+              }
+            }
+          }
+        }
+      }
+
+      val bwdLayerSize = bwdQueue.size
+      for (_ <- 0 until bwdLayerSize) {
+        val curr = bwdQueue.dequeue()
+        
+        if (fwdVisited.contains(curr.perm)) {
+          val fwdPath = fwdVisited(curr.perm)
+          val bwdPath = curr.path
+          return Some(fwdPath ++ bwdPath.reverse)
+        }
+
+        if (curr.path.length < maxDepth) {
+          for (op <- ops) {
+            var skip = false
+            if (curr.lastOpType.nonEmpty) {
+              skip = (op.opType == "grevi" && curr.lastOpType == "grevi" && op.imm == curr.lastOpImm) ||
+                (op.opType == "shfli" && curr.lastOpType == "unshfli" && op.imm == curr.lastOpImm) ||
+                (op.opType == "unshfli" && curr.lastOpType == "shfli" && op.imm == curr.lastOpImm) ||
+                (op.opType == "rori" && curr.lastOpType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
             }
             
-            queue.enqueue((newCurrArr, newInstrList))
+            if (!skip) {
+              val nextPerm = op.reverseFunc(curr.perm.toArray).toList
+              if (!bwdVisited.contains(nextPerm)) {
+                val nextPath = curr.path :+ op.name
+                bwdVisited(nextPerm) = nextPath
+                bwdQueue.enqueue(State(nextPerm, nextPath, op.opType, op.imm))
+              }
+            }
           }
         }
       }
@@ -186,33 +213,44 @@ object PermBuilder {
     None
   }
 
+  def isRot(p: Array[Int]): Option[Int] = {
+    val firstShift = (p(0) - 0 + 32) % 32
+    if ((1 until 32).forall(i => (p(i) - i + 32) % 32 == firstShift)) Some(firstShift) else None
+  }
+  
+  def detectSpecialPatterns(perm: Map[Int, Int], reg: String): Option[String] = {
+      val arr = mapToArray(perm)
+      if ((0 until 32 by 2).forall(i => arr(i) == i+1 && arr(i+1) == i)) {
+        Some(s"grevi $reg, $reg, 0x1")
+      } else if ((0 until 16).forall(i => arr(i) == i+16 && arr(i+16) == i)) {
+        Some(s"grevi $reg, $reg, 0x10")
+      } else {
+        None
+      }
+  }
+
   def buildPermutation(rd: Int, rs1: Int, perm: Map[Int, Int]): List[String] = {
     val targetArr = mapToArray(perm)
-    val identArr = Array.tabulate(32)(i => i)
+    val reg = s"x$rd"
 
     if (isId(targetArr)) {
       return List()
     }
 
     isRot(targetArr) match {
-      case Some(rotAmount) =>
-        return List(s"rori x$rd x$rd $rotAmount")
+      case Some(rotAmount) if rotAmount > 0 => return List(s"rori $reg, $reg, $rotAmount")
+      case _ =>
+    }
+
+    detectSpecialPatterns(perm, reg) match {
+      case Some(instr) => return List(instr)
       case None =>
     }
 
-    detectSpecialPatterns(perm) match {
-      case Some(instr) => 
-        return List(instr.replace("x1", s"x$rd"))
-      case None =>
+    findInstructionSequence(targetArr, maxDepth = 8, reg) match {
+      case Some(result) => List("grevi x1 x1 31") ++ result ++ List("grevi x1 x1 31")
+      case None => 
+        List()
     }
-
-    for (depth <- 1 to 4) {
-      getInstrBFS(rd, identArr, targetArr, depth) match {
-        case Some(res) => return res
-        case None =>
-      }
-    }
-    
-    List()
   }
 }

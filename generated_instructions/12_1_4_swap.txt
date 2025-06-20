@@ -1,0 +1,7 @@
+shfli x1, x1, 0x2
+rori x1, x1, 1
+unshfli x1, x1, 0xf
+rori x1, x1, 1
+shfli x1, x1, 0xf
+rori x1, x1, 29
+shfli x1, x1, 0x2

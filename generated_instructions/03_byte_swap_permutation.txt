@@ -1,2 +1,3 @@
-rori x1 x1 16
-grevi x1 x1 0x8
+grevi x1 x1 31
+grevi x1, x1, 0x18
+grevi x1 x1 31
