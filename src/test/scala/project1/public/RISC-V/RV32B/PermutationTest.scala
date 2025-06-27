@@ -3,6 +3,8 @@ package project1.public.RISCV.RV32B
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import RISCV.utils.PermBuilder.buildPermutation
+import org.scalatest.time._
+
 
 import java.io.{File, PrintWriter} // for writing generated instructions to file
 
@@ -323,25 +325,35 @@ class PermutationTest extends AnyFlatSpec with Matchers {
     }
 
     it should "perform 1-4 swap correctly" in {
+        
+        withClue("test for 1-4 swap exceeded timeout") {
+        }
         val initialList = List.range(0, 32)
         val targetList: List[Int] = initialList
             .updated(1, 4)
             .updated(4, 1)
         val permutation: Map[Int, Int] = targetList.zipWithIndex.map(_.swap).toMap
-        // val instructions = buildPermutation(1, 2, permutation)
-        val instructions: List[String] = List(
-            "shfli x1, x1, 0x2",
-            "rori x1, x1, 1",
-            "unshfli x1, x1, 0xf",
-            "rori x1, x1, 1",
-            "shfli x1, x1, 0xf",
-            "rori x1, x1, 29",
-            "shfli x1, x1, 0x2"
-        )
+        val startTime = System.nanoTime()
+        val instructions = buildPermutation(1, 2, permutation)
+        val endTime = System.nanoTime() // End timer
+        val duration = (endTime - startTime) / 1_000_000.0
+        println(s"duration of buildPermutation for test 'perform 1-4 swap correctly': $duration ms")
         instructions should not be empty
         writeInstructionsToFile("12_1_4_swap", instructions)
         val result = emulatePermutation(1, 2, instructions)
         result shouldEqual permutation
+    }
+
+    it should "demonstrate timeout (mock)" in {
+        Thread.sleep(3000)
+        1 shouldEqual 1
+    }
+
+    // A test that will intentionally timeout if limit is 1 second
+    it should "demonstrate intentional timeout (mock)" in { // Corrected: Removed `taggedAs(Slow)`
+        Thread.
+        sleep(2000)
+        1 shouldEqual 1
     }
     
     it should "perform pairwise swaps at word ends (0,1 and 30,31) correctly" in {

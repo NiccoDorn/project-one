@@ -113,64 +113,37 @@ object PermBuilder {
   )
 
   case class State(
-    perm: Vector[Int],
-    parent: Option[State],
-    lastOpType: String,
-    lastOpImm: Int,
-    opName: String
+    perm: List[Int],
+    path: List[String],
+    lastOpType: String = "",
+    lastOpImm: Int = 0
   )
-
-  private def reconPath(state: State): List[String] = {
-    @tailrec
-    def buildPath(s: State, acc: List[String]): List[String] = {
-      s.parent match {
-        case Some(p) => buildPath(p, s.opName :: acc)
-        case None => acc
-      }
-    }
-    buildPath(state, List()).filter(_.nonEmpty)
-  }
 
   def findInstructionSequence(targetState: Array[Int], maxDepth: Int, reg: String): Option[List[String]] = {
     val identityPerm = Array.tabulate(32)(i => i)
-    if (targetState.sameElements(identityPerm)) return Some(List("rori x1, x1, 32"))
-
-    val prioRoriImms = Seq(31, 29, 2, 1, 30, 4, 8, 16, 24)
-    val allRoriImms = (1 until 32).toSeq
-    val roriImmsOrder = prioRoriImms ++ allRoriImms.filterNot(prioRoriImms.contains)
-
-    val prioGreviImms = Seq(31, 1, 16, 24, 8, 4, 2)
-    val allGreviImms = (1 until 32).toSeq
-    val greviImmsOrd = prioGreviImms ++ allGreviImms.filterNot(prioGreviImms.contains)
-
-    val prioShfliImms = Seq(1, 15, 2, 4, 8)
-    val allShfliImms = (1 until 16).toSeq
-    val shfliImmsOrdered = prioShfliImms ++ allShfliImms.filterNot(prioShfliImms.contains)
+    if (targetState.sameElements(identityPerm)) return Some(List("rori x1 x1 32"))
 
     val ops = {
-      val roriOps = roriImmsOrder.map(i =>
+      val roriOps = (1 until 32).map(i => 
         OperationInfo(s"rori $reg, $reg, $i", "rori", i, p => rotateRight(p, i), p => rotateLeft(p, i))
       )
-      val shfliOps = shfliImmsOrdered.map(i =>
+      val shfliOps = (1 until 16).map(i => 
         OperationInfo(f"shfli $reg, $reg, 0x$i%x", "shfli", i, p => applyShfli(p, i), p => applyUnshfli(p, i))
       )
-      val unshfliOps = shfliImmsOrdered.map(i =>
+      val unshfliOps = (1 until 16).map(i => 
         OperationInfo(f"unshfli $reg, $reg, 0x$i%x", "unshfli", i, p => applyUnshfli(p, i), p => applyShfli(p, i))
       )
-      val greviOps = greviImmsOrd.map(i =>
+      val greviOps = (1 until 32).map(i => 
         OperationInfo(f"grevi $reg, $reg, 0x$i%x", "grevi", i, p => applyGrevi(p, i), p => applyGrevi(p, i))
       )
       roriOps ++ shfliOps ++ unshfliOps ++ greviOps
     }
 
-    val idPermVec = identityPerm.toVector
-    val tStateVec = targetState.toVector
+    val fwdQ = Queue(State(identityPerm.toList, List()))
+    val bwdQ = Queue(State(targetState.toList, List()))
 
-    val fwdQ = Queue(State(idPermVec, None, "", 0, ""))
-    val bwdQ = Queue(State(tStateVec, None, "", 0, ""))
-
-    val fwdVis = MutableMap[Vector[Int], State](idPermVec -> fwdQ.head)
-    val bwdVis = MutableMap[Vector[Int], State](tStateVec -> bwdQ.head)
+    val fwdVis = MutableMap[List[Int], List[String]](identityPerm.toList -> List())
+    val bwdVis = MutableMap[List[Int], List[String]](targetState.toList -> List())
 
     for (depth <- 0 to maxDepth) {
       val fwdLayerSize = fwdQ.size
@@ -178,24 +151,27 @@ object PermBuilder {
         val curr = fwdQ.dequeue()
 
         if (bwdVis.contains(curr.perm)) {
-          val fwdPath = reconPath(curr)
-          val bwdPath = reconPath(bwdVis(curr.perm)).reverse
-          return Some(fwdPath ++ bwdPath)
+          val fwdPath = curr.path
+          val bwdPath = bwdVis(curr.perm)
+          return Some(fwdPath ++ bwdPath.reverse)
         }
 
-        if (reconPath(curr).length < maxDepth) {
+        if (curr.path.length < maxDepth) {
           for (op <- ops) {
-            val skip = (curr.lastOpType == op.opType && curr.lastOpImm == op.imm && op.opType == "grevi") ||
-                         (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
-            
+            var skip = false
+            if (curr.lastOpType.nonEmpty) {
+              if (op.opType == "grevi" && curr.lastOpType == "grevi" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "shfli" && curr.lastOpType == "unshfli" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "unshfli" && curr.lastOpType == "shfli" && op.imm == curr.lastOpImm) skip = true
+              else if (op.opType == "rori" && curr.lastOpType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0) skip = true
+            }
+
             if (!skip) {
-              val nextPerm = op.func(curr.perm.toArray).toVector
+              val nextPerm = op.func(curr.perm.toArray).toList
               if (!fwdVis.contains(nextPerm)) {
-                val nextState = State(nextPerm, Some(curr), op.opType, op.imm, op.name)
-                fwdVis(nextPerm) = nextState
-                fwdQ.enqueue(nextState)
+                val nextPath = curr.path :+ op.name
+                fwdVis(nextPerm) = nextPath
+                fwdQ.enqueue(State(nextPerm, nextPath, op.opType, op.imm))
               }
             }
           }
@@ -207,24 +183,27 @@ object PermBuilder {
         val curr = bwdQ.dequeue()
         
         if (fwdVis.contains(curr.perm)) {
-          val fwdPath = reconPath(fwdVis(curr.perm))
-          val bwdPath = reconPath(curr).reverse
-          return Some(fwdPath ++ bwdPath)
+          val fwdPath = fwdVis(curr.perm)
+          val bwdPath = curr.path
+          return Some(fwdPath ++ bwdPath.reverse)
         }
 
-        if (reconPath(curr).length < maxDepth) {
+        if (curr.path.length < maxDepth) {
           for (op <- ops) {
-            val skip = (curr.lastOpType == op.opType && curr.lastOpImm == op.imm && op.opType == "grevi") ||
-                         (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
-
+            var skip = false
+            if (curr.lastOpType.nonEmpty) {
+              skip = (op.opType == "grevi" && curr.lastOpType == "grevi" && op.imm == curr.lastOpImm) ||
+                (op.opType == "shfli" && curr.lastOpType == "unshfli" && op.imm == curr.lastOpImm) ||
+                (op.opType == "unshfli" && curr.lastOpType == "shfli" && op.imm == curr.lastOpImm) ||
+                (op.opType == "rori" && curr.lastOpType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
+            }
+            
             if (!skip) {
-              val nextPerm = op.reverseFunc(curr.perm.toArray).toVector
+              val nextPerm = op.reverseFunc(curr.perm.toArray).toList
               if (!bwdVis.contains(nextPerm)) {
-                val nextState = State(nextPerm, Some(curr), op.opType, op.imm, op.name)
-                bwdVis(nextPerm) = nextState
-                bwdQ.enqueue(nextState)
+                val nextPath = curr.path :+ op.name
+                bwdVis(nextPerm) = nextPath
+                bwdQ.enqueue(State(nextPerm, nextPath, op.opType, op.imm))
               }
             }
           }
@@ -252,47 +231,47 @@ object PermBuilder {
 
 
   /** This function takes a mapping for the permutation and returns the list of
-   * necessary instructions to implement the permutation.
-   *
-   * You may assume that the map encodes a valid permutation, i.e., that every
-   * destination bit is associated with a unique source bit.
-   *
-   * You may only write to register rd.
-   *
-   * @param rd
-   * The destination register
-   * @param rs1
-   * The source register
-   * @param perm
-   * A map representing the permutation, mapping destination bit
-   * positions to source bit positions.
-   * @return
-   * A list of strings representing the instructions to implement the
-   * permutation e.g. List("grevi x1, x2, 0x01", "grevi x1, x2, 0x02", ...)
-   */
+  * necessary instructions to implement the permutation.
+  *
+  * You may assume that the map encodes a valid permutation, i.e., that every
+  * destination bit is associated with a unique source bit.
+  *
+  * You may only write to register rd.
+  *
+  * @param rd
+  *   The destination register
+  * @param rs1
+  *   The source register
+  * @param perm
+  *   A map representing the permutation, mapping destination bit
+  *   positions to source bit positions.
+  * @return
+  *   A list of strings representing the instructions to implement the
+  *   permutation e.g. List("grevi x1, x2, 0x01", "grevi x1, x2, 0x02", ...)
+  */
   def buildPermutation(rd: Int, rs1: Int, perm: Map[Int, Int]): List[String] = {
     val targetArr = mapToArray(perm)
     val reg = s"x$rd"
 
     if (isId(targetArr)) {
-      return List(s"rori $reg, $reg, 32")
+      return List("rori x1 x1 32")
     }
-    
+
     isRot(targetArr) match {
       case Some(rotAmount) if rotAmount > 0 => return List(s"rori $reg, $reg, $rotAmount")
       case _ =>
     }
 
     detectSpecialPatterns(perm, reg) match {
-      case Some(instr) => return List(instr)
+      case Some(instr) => return  List(instr) 
       case None =>
     }
 
     findInstructionSequence(targetArr, maxDepth = 4, reg) match { // depth=4 limit due to time constraints
       case Some(result) => List("grevi x1 x1 31") ++ result ++ List("grevi x1 x1 31")
-      case None => List(s"rori $reg, $reg, 32") // normally, no solution is better than a wrong one but list may not be empty
+      case None => List("rori x1 x1 32") // normally, no solution is better than a wrong one but list may not be empty
     /*
-    One final notice:
+    One final notice: 
     See CONTRIBUTIONS.md for more detail about what's happening here... It's a bit chaotic.
     */
     }
