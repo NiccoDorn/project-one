@@ -48,7 +48,7 @@ Ognjen, Florian, Nicolas
 - Review and Input: Nicolas & Ognjen
 - Challenges and Insights: Personal difference between us and Scala. Also: Confused functions with classes (lowercase class names - yikes...). Let's just continue.
 
-#### Task 2.5
+#### Task 2.5 Bit Permutation Instructions
 - Implementation: Nicolas
 - Review and Input: Ognjen & Florian
 - Challenges and Insights: Actually worked with wrong decodings for a while being completely flabbergasted about why instructions sometimes worked or not depending on how I set reg_rs2 with 0.U or our rs2 value. Florian fixed this. After that the code worked perfectly fine and the Mux to set reg_rs2 worked as expected.
