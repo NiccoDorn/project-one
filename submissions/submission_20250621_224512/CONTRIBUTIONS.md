@@ -78,7 +78,7 @@ and find a way to adjust the input in my scala implementation such that it passe
 
 - Team and I reviewed the code but we couldn't detect the reason for the weird behaviour in the code. AI (Claude) also didn't.
 
-- Edit on 02.07.2025: I wrote a function that mirroed my changes in the target permutation along the middle and now it gives me the correct instruction sequences without having to wrap them with grevi 31 instructions => Best solutions are now 2 less instructions long. See `CustomPermutation.scala` under `/src/main/scala/RISC-V/utils`
+- Edit on 02.07.2025: I wrote a scala function that mirrores my changes in the target permutation along the middle and now it gives me the correct instruction sequences without having to wrap them with grevi 31 instructions => Best solutions are now 2 less instructions long. See `CustomPermutation.scala` under `/src/main/scala/RISC-V/utils`
 
 - See my C++ implementation script with custom hashing for breaking up patterns: `perm_finder.cpp` under `/submission`
 
