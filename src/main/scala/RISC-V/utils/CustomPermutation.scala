@@ -15,6 +15,20 @@ object PermBuilder {
     arr.zipWithIndex.map { case (src, dest) => dest -> src }.toMap
   }
 
+  def getMirroredPermutation(perm: List[Int]): List[Int] = {
+    val n = perm.length
+    val mirrPerm = Array.ofDim[Int](n)
+
+    for (i <- 0 until n) {
+      val origVal = perm(i)
+      val mirrIdx = n - 1 - i
+      val mirrVal = n - 1 - origVal
+      mirrPerm(mirrIdx) = mirrVal
+    }
+    mirrPerm.toList
+  }
+
+
   def isId(p: Array[Int]): Boolean = {
     (0 until 32).forall(i => p(i) == i)
   }
@@ -287,14 +301,10 @@ object PermBuilder {
       case Some(instr) => return List(instr)
       case None =>
     }
-
-    findInstructionSequence(targetArr, maxDepth = 4, reg) match { // depth=4 limit due to time constraints
-      case Some(result) => List("grevi x1 x1 31") ++ result ++ List("grevi x1 x1 31")
-      case None => List(s"rori $reg, $reg, 32") // normally, no solution is better than a wrong one but list may not be empty
-    /*
-    One final notice:
-    See CONTRIBUTIONS.md for more detail about what's happening here... It's a bit chaotic.
-    */
+    val tArr = getMirroredPermutation(targetArr.toList).toArray
+    findInstructionSequence(tArr, maxDepth = 4, reg) match { // depth=4 limit due to time constraints
+      case Some(result) => result
+      case None => List(s"rori $reg, $reg, 32")
     }
   }
 }
