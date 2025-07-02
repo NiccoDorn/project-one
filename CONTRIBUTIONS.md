@@ -1,5 +1,5 @@
 # Contributions
-Ognjen Stojicic (7006292), Florian Philippi (7055169), Nicolas Dornblüth (7013576)
+Ognjen, Florian, Nicolas
 
 ### Setup and Infra & Pipeline
 - Nico: Providing Github Repo to work on things + setup. Managing pull requests, updating tests from organizers etc.
