@@ -84,16 +84,17 @@ and find a way to adjust the input in my scala implementation such that it passe
 
     
 #### One final notice:
-    - 02.07.2025: This approach allows me now to compute instruction sequences for swap with distance 1 to 4. For example: adjacent swaps and swaps like 21 <=> 25 etc. One more note: This is even better than only knowing the instruction sequence solutions for adjacent swaps.
-    - Easy solutions but not elegant: As mentioned, I do have all the instruction sequences for doing adjacent swaps. However, giving you a solution of chained-together swap instruction sequences to finally reach an arbitrary permutation feels a bit stupid and
-    not the intention of this exercise or how you intended it.
-    - Thus, I am not providing such solutions. Especially, seeing the bonus points calculation, I assume that those solutions
-    would be so far away from the best solutions in cycles and amount of instructions that I think, I'd not get points for
-    those anyways. BUt main thing is: I do not want to provide 'stupid' solutions.
-    Being aware of different approaches like Hamming Distance etc., I really wanted to explore with the limited time
-    how I can come up with my own solutions.
-    - That being sad: Knowing all solutions for swaps with distance 1 to 4, one can calculate the minimal number of swaps with 1-4 distance and accodring to this build a more efficient chain of instruction sequences. The only remaining thing: Have an intelligent approach that can condense this chain into less instructions via identity checks, immediate-inverse-followup instruction elimination as well as maximum interval deletion for reoccuring transposition results along the chain of instruction sequences. (Maybe a TODO for free time)
-    - Interesting approaches:
+- 02.07.2025: This approach allows me now to compute instruction sequences for swap with distance 1 to 4. 
+- For example: adjacent swaps and swaps like 21 <=> 25 etc. One more note: This is even better than only knowing the instruction sequence solutions for adjacent swaps.
+- Easy solutions but not elegant: As mentioned, I do have all the instruction sequences for doing adjacent swaps. However, giving a solution of chained-together swap instruction sequences to finally reach an arbitrary permutation feels a bit stupid and
+not the intention of this exercise or how you intended it.
+- Thus, I am not providing such solutions. Especially, seeing the bonus points calculation, I assume that those solutions
+would be so far away from the best solutions in cycles and amount of instructions that I think, I'd not get points for
+those anyways. BUt main thing is: I do not want to provide 'stupid' solutions.
+Being aware of different approaches like Hamming Distance etc., I really wanted to explore with the limited time
+how I can come up with my own solutions.
+- That being sad: Knowing all solutions for swaps with distance 1 to 4, one can calculate the minimal number of swaps with 1-4 distance and accodring to this build a more efficient chain of instruction sequences. The only remaining thing: Have an intelligent approach that can condense this chain into less instructions via identity checks, immediate-inverse-followup instruction elimination as well as maximum interval deletion for reoccuring transposition results along the chain of instruction sequences. (Maybe a TODO for free time)
+- Interesting approaches:
     1. Hamming Distances or Other Distance metrics.
     2. Mask metrics / similarity checks given what our 4 allowed instructions do and how similar a permutation seems to be to a mask (mainly specific arithmetics)
     3. Some Concurrent Programming Models 4. Optimization of long generated instruction sequences by checking all generated permutations until target permutation is reached => Deleting those instructions inbetween EXCLUDING the instruction that first lead to this permutation. The search would have started from the front and the back in a Dictionary: Key-Value = Instruction_i:Permutation_i. This would effectively remove the longest sequence of instructions that lead to a reoccuring permutation, effectively deleting the corresponding sequence of instructions inbetween, potentially heavily optimizing "trial and error" solutions.
