@@ -80,12 +80,14 @@ and find a way to adjust the input in my scala implementation such that it passe
 
 - Edit on 02.07.2025: I wrote a function that mirroed my changes in the target permutation along the middle and now it gives me the correct instruction sequences without having to wrap them with grevi 31 instructions => Best solutions are now 2 less instructions long.
 
+- See my C++ implementation script with custom hashing for breaking up patterns: perm_finder.cpp under /submission
+
     
 #### One final notice:
     - 02.07.2025: This approach allows me now to compute instruction sequences for swap with distance 1 to 4. For example: adjacent swaps and swaps like 21 <=> 25 etc. One more note: This is even better than only knowing the instruction sequence solutions for adjacent swaps.
-    - Easy solutions but not elegant: As mentioned, I do have all the instruction sequences for doing adjacent swaps. However, giving you a solution of chained-together swap instruction sequences to finally reach an arbitrary permutation feels a bit stupid and 
+    - Easy solutions but not elegant: As mentioned, I do have all the instruction sequences for doing adjacent swaps. However, giving you a solution of chained-together swap instruction sequences to finally reach an arbitrary permutation feels a bit stupid and
     not the intention of this exercise or how you intended it.
-    - Thus, I am not providing such solutions. Especially, seeing the bonus points calculation, I assume that those solutions 
+    - Thus, I am not providing such solutions. Especially, seeing the bonus points calculation, I assume that those solutions
     would be so far away from the best solutions in cycles and amount of instructions that I think, I'd not get points for
     those anyways. BUt main thing is: I do not want to provide 'stupid' solutions.
     Being aware of different approaches like Hamming Distance etc., I really wanted to explore with the limited time
