@@ -15,9 +15,6 @@ object PermBuilder {
     arr.zipWithIndex.map { case (src, dest) => dest -> src }.toMap
   }
 
-  def isId(p: Array[Int]): Boolean = {
-    (0 until 32).forall(i => p(i) == i)
-  }
 
   private def applyGrevi(p: Array[Int], imm: Int): Array[Int] = {
     val newArr = new Array[Int](32)
@@ -154,8 +151,6 @@ object PermBuilder {
 
     val ops = {
       val roriOps = roriImmsOrder.map(i =>
-        // FIX: If rori instruction is defined as a LEFT rotation in the project,
-        // map its forward function to rotateLeft and reverse function to rotateRight.
         OperationInfo(s"rori $reg, $reg, $i", "rori", i, p => rotateLeft(p, i), p => rotateRight(p, i))
       )
       val shfliOps = shfliImmsOrdered.map(i =>
@@ -193,9 +188,9 @@ object PermBuilder {
         if (reconPath(curr).length < maxDepth) {
           for (op <- ops) {
             val skip = (curr.lastOpType == op.opType && curr.lastOpImm == op.imm && op.opType == "grevi") ||
-                         (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
+                        (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
+                        (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
+                        (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
             
             if (!skip) {
               val nextPerm = op.func(curr.perm.toArray).toVector
@@ -222,9 +217,9 @@ object PermBuilder {
         if (reconPath(curr).length < maxDepth) {
           for (op <- ops) {
             val skip = (curr.lastOpType == op.opType && curr.lastOpImm == op.imm && op.opType == "grevi") ||
-                         (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
-                         (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
+                        (curr.lastOpType == "unshfli" && op.opType == "shfli" && curr.lastOpImm == op.imm) ||
+                        (curr.lastOpType == "shfli" && op.opType == "unshfli" && curr.lastOpImm == op.imm) ||
+                        (curr.lastOpType == "rori" && op.opType == "rori" && (op.imm + curr.lastOpImm) % 32 == 0)
 
             if (!skip) {
               val nextPerm = op.reverseFunc(curr.perm.toArray).toVector
@@ -240,6 +235,8 @@ object PermBuilder {
     }
     None
   }
+
+  def isId(p: Array[Int]): Boolean = { (0 until 32).forall(i => p(i) == i) }
 
   def isRot(p: Array[Int]): Option[Int] = {
     val firstShift = (p(0) - 0 + 32) % 32
