@@ -37,8 +37,8 @@ struct OperationInfo {
 
     OperationInfo() : name(""), type(""), imm(0), func([](const Permutation& p){return p;}), reverse_func([](const Permutation& p){return p;}) {}
     OperationInfo(const std::string& n, const std::string& t, int i,
-                  std::function<Permutation(const Permutation&)> f,
-                  std::function<Permutation(const Permutation&)> rf)
+                std::function<Permutation(const Permutation&)> f,
+                std::function<Permutation(const Permutation&)> rf)
         : name(n), type(t), imm(i), func(f), reverse_func(rf) {}
 };
 
@@ -72,7 +72,7 @@ std::string perm_to_string(const Permutation& perm) {
 Permutation rotate_right(const Permutation& permu, int n) {
     n = n & 31;
     Permutation new_perm = permu;
-    std::rotate(new_perm.rbegin(), new_perm.rbegin() + n, new_perm.rend());
+    std::rotate(new_perm.begin(), new_perm.begin() + n, new_perm.end());
     return new_perm;
 }
 
@@ -318,9 +318,6 @@ int main() {
 
     target[1] = 4;
     target[4] = 1;
-
-    target[31] = 30;
-    target[30] = 31;
 
     std::cout << "Target permutation: " << perm_to_string(target) << std::endl;
     auto start = std::chrono::high_resolution_clock::now();

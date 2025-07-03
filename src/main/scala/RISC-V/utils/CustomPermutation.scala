@@ -15,20 +15,6 @@ object PermBuilder {
     arr.zipWithIndex.map { case (src, dest) => dest -> src }.toMap
   }
 
-  def getMirroredPermutation(perm: List[Int]): List[Int] = {
-    val n = perm.length
-    val mirrPerm = Array.ofDim[Int](n)
-
-    for (i <- 0 until n) {
-      val origVal = perm(i)
-      val mirrIdx = n - 1 - i
-      val mirrVal = n - 1 - origVal
-      mirrPerm(mirrIdx) = mirrVal
-    }
-    mirrPerm.toList
-  }
-
-
   def isId(p: Array[Int]): Boolean = {
     (0 until 32).forall(i => p(i) == i)
   }
@@ -109,13 +95,18 @@ object PermBuilder {
     val amount = n & 31
     val newArr = new Array[Int](32)
     for (i <- 0 until 32) {
-      newArr((i + amount) % 32) = p(i)
+      newArr(i) = p((i - amount + 32) % 32)
     }
     newArr
   }
 
   def rotateLeft(p: Array[Int], n: Int): Array[Int] = {
-    rotateRight(p, 32 - (n & 31))
+    val amount = n & 31
+    val newArr = new Array[Int](32)
+    for (i <- 0 until 32) {
+      newArr(i) = p((i + amount) % 32)
+    }
+    newArr
   }
 
   case class OperationInfo(
@@ -147,7 +138,7 @@ object PermBuilder {
 
   def findInstructionSequence(targetState: Array[Int], maxDepth: Int, reg: String): Option[List[String]] = {
     val identityPerm = Array.tabulate(32)(i => i)
-    if (targetState.sameElements(identityPerm)) return Some(List("rori x1, x1, 32"))
+    if (targetState.sameElements(identityPerm)) return Some(List(s"rori $reg, $reg, 32"))
 
     val prioRoriImms = Seq(31, 29, 2, 1, 30, 4, 8, 16, 24)
     val allRoriImms = (1 until 32).toSeq
@@ -163,7 +154,9 @@ object PermBuilder {
 
     val ops = {
       val roriOps = roriImmsOrder.map(i =>
-        OperationInfo(s"rori $reg, $reg, $i", "rori", i, p => rotateRight(p, i), p => rotateLeft(p, i))
+        // FIX: If rori instruction is defined as a LEFT rotation in the project,
+        // map its forward function to rotateLeft and reverse function to rotateRight.
+        OperationInfo(s"rori $reg, $reg, $i", "rori", i, p => rotateLeft(p, i), p => rotateRight(p, i))
       )
       val shfliOps = shfliImmsOrdered.map(i =>
         OperationInfo(f"shfli $reg, $reg, 0x$i%x", "shfli", i, p => applyShfli(p, i), p => applyUnshfli(p, i))
@@ -301,7 +294,8 @@ object PermBuilder {
       case Some(instr) => return List(instr)
       case None =>
     }
-    val tArr = getMirroredPermutation(targetArr.toList).toArray
+
+    val tArr = targetArr
     findInstructionSequence(tArr, maxDepth = 4, reg) match { // depth=4 limit due to time constraints
       case Some(result) => result
       case None => List(s"rori $reg, $reg, 32")
